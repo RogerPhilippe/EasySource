@@ -14,15 +14,20 @@ const FILTERS = [
   ['modified', t('Modified')], ['ignored', t('Ignored')],
 ];
 const SORTS = [
-  ['path', t('path')], ['path-r', t('path (reversed)')], ['name', t('file name')],
-  ['name-r', t('file name (reversed)')], ['status', t('file status')],
+  ['path', t('path')], ['name', t('file name')], ['status', t('file status')], ['ext', t('extension')],
 ];
+// Ordem de "status": o que exige ação primeiro (conflitos), arquivos novos e ignorados por último.
+const STATUS_ORDER = ['U', 'M', 'T', 'A', 'C', 'D', 'R', '?', '!'];
 
 export class StatusView {
   constructor(rv) {
     this.rv = rv;
     this.filter = 'pending';
-    this.sort = localStorage.getItem('status:sort') || 'path';
+    this.sort = 'path';
+    try {
+      const saved = localStorage.getItem('status:sort');
+      if (SORTS.some(([id]) => id === saved)) this.sort = saved;
+    } catch { /* noop */ }
     this.search = '';
     this.sel = { staged: new Set(), unstaged: new Set() };
     this.focusList = 'unstaged';
@@ -175,11 +180,12 @@ export class StatusView {
   sortFn() {
     const name = (f) => basename(f.path).toLowerCase();
     const p = (f) => f.path.toLowerCase();
+    const rank = (f) => { const i = STATUS_ORDER.indexOf(f.status); return i < 0 ? STATUS_ORDER.length : i; };
+    const ext = (f) => { const n = name(f); const i = n.lastIndexOf('.'); return i > 0 ? n.slice(i + 1) : ''; };
     switch (this.sort) {
-      case 'path-r': return (a, b) => p(b).localeCompare(p(a));
-      case 'name': return (a, b) => name(a).localeCompare(name(b));
-      case 'name-r': return (a, b) => name(b).localeCompare(name(a));
-      case 'status': return (a, b) => a.status.localeCompare(b.status) || p(a).localeCompare(p(b));
+      case 'name': return (a, b) => name(a).localeCompare(name(b)) || p(a).localeCompare(p(b));
+      case 'status': return (a, b) => rank(a) - rank(b) || p(a).localeCompare(p(b));
+      case 'ext': return (a, b) => ext(a).localeCompare(ext(b)) || p(a).localeCompare(p(b));
       default: return (a, b) => p(a).localeCompare(p(b));
     }
   }
