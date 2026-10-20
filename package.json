@@ -1,0 +1,140 @@
+{
+  "name": "easysource",
+  "productName": "EasySource",
+  "version": "0.1.0",
+  "description": "Cliente Git visual e moderno para Windows, macOS e Linux",
+  "main": "src/main/main.js",
+  "license": "AGPL-3.0-or-later",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/RogerPhilippe/EasySource.git"
+  },
+  "homepage": "https://github.com/RogerPhilippe/EasySource",
+  "bugs": "https://github.com/RogerPhilippe/EasySource/issues",
+  "scripts": {
+    "start": "node scripts/start.js",
+    "icon": "node scripts/start.js scripts/make-icon.js",
+    "test": "node --test test/*.test.js",
+    "test:smoke": "node test/smoke.js",
+    "dist": "electron-builder --publish never",
+    "dist:win": "electron-builder --win --x64 --publish never",
+    "dist:mac": "electron-builder --mac --arm64 --x64 --publish never",
+    "dist:linux": "electron-builder --linux --x64 --publish never"
+  },
+  "build": {
+    "appId": "com.easysource.app",
+    "productName": "EasySource",
+    "copyright": "Copyright © 2026 Roger Philippe Pereira",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*",
+      "assets/**/*",
+      "package.json"
+    ],
+    "asarUnpack": [
+      "src/main/seq-editor.js"
+    ],
+    "afterPack": "scripts/after-pack.js",
+    "extraFiles": [
+      {
+        "from": "LICENSE",
+        "to": "LICENSE.txt"
+      },
+      {
+        "from": "COMMERCIAL-LICENSE.md",
+        "to": "COMMERCIAL-LICENSE.md"
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "assets/icon.ico",
+      "artifactName": "EasySource-${version}-win-${arch}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "EasySource",
+      "license": "LICENSE",
+      "artifactName": "EasySource-Setup-${version}-x64.${ext}"
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        }
+      ],
+      "icon": "assets/icon.png",
+      "category": "public.app-category.developer-tools",
+      "identity": null,
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false,
+      "artifactName": "EasySource-${version}-mac-${arch}.${ext}"
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "deb",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "tar.gz",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "assets/icon.png",
+      "category": "Development",
+      "executableName": "easysource",
+      "maintainer": "Roger Philippe Pereira <rogerphilippepereira@gmail.com>",
+      "synopsis": "Cliente Git visual e moderno",
+      "artifactName": "EasySource-${version}-linux-${arch}.${ext}"
+    }
+  },
+  "devDependencies": {
+    "electron": "^44.9.0",
+    "electron-builder": "^26.15.3"
+  },
+  "allowScripts": {
+    "electron@44.9.0": true
+  },
+  "author": "Roger Philippe Pereira <rogerphilippepereira@gmail.com>"
+}

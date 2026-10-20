@@ -1,0 +1,117 @@
+name: Release
+
+# Ao enviar uma tag v* (ex.: v0.1.0), gera os pacotes das três plataformas e
+# publica uma Release no GitHub com eles (o GitHub anexa o código-fonte automaticamente).
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag existente para (re)publicar, por exemplo v0.1.0'
+        required: true
+
+# Só o job que publica a Release tem permissão de escrita.
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: build-${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            dist: dist:win
+          - os: ubuntu-latest
+            dist: dist:linux
+          - os: macos-latest
+            dist: dist:mac
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          node node_modules/electron/install.js
+
+      - name: Tests
+        run: |
+          git config --global user.name "CI"
+          git config --global user.email "ci@example.com"
+          npm test
+
+      - name: Package
+        shell: bash
+        run: |
+          set -o pipefail
+          if ! npm run ${{ matrix.dist }} 2>&1 | tee build.log; then
+            msg=$(tail -n 40 build.log | sed -e 's/%/%25/g' -e 's/\r//g' | sed -e ':a' -e 'N' -e '$!ba' -e 's/\n/%0A/g')
+            echo "::error title=Package failed::${msg}"
+            exit 1
+          fi
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: release-${{ runner.os }}
+          path: |
+            dist/*.exe
+            dist/*.zip
+            dist/*.dmg
+            dist/*.AppImage
+            dist/*.deb
+            dist/*.tar.gz
+          if-no-files-found: error
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Checksums
+        run: |
+          cd artifacts
+          sha256sum * > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      - uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
+        with:
+          tag_name: ${{ inputs.tag || github.ref_name }}
+          name: EasySource ${{ inputs.tag || github.ref_name }}
+          generate_release_notes: true
+          body: |
+            ## Downloads
+
+            | Sistema | Arquivo |
+            |---|---|
+            | Windows x64 (instalador) | `EasySource-Setup-<versão>-x64.exe` |
+            | Windows x64 (portátil) | `EasySource-<versão>-win-x64.zip` |
+            | macOS Apple Silicon | `EasySource-<versão>-mac-arm64.dmg` |
+            | macOS Intel | `EasySource-<versão>-mac-x64.dmg` |
+            | Linux x64 | `.AppImage`, `.deb` ou `.tar.gz` |
+
+            O [Git](https://git-scm.com/downloads) precisa estar instalado.
+
+            **As builds não são assinadas:**
+            - **Windows:** no aviso do SmartScreen, clique em *Mais informações → Executar assim mesmo*.
+            - **macOS:** na primeira abertura, clique com o botão direito no app → *Abrir*, ou rode
+              `xattr -dr com.apple.quarantine /Applications/EasySource.app`.
+            - **Linux (AppImage):** `chmod +x EasySource-*.AppImage` antes de executar.
+
+            Confira a integridade dos arquivos com `SHA256SUMS.txt`.
+          files: artifacts/*

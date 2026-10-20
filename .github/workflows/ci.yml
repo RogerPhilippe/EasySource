@@ -1,0 +1,154 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            dist: dist:win
+          - os: ubuntu-latest
+            dist: dist:linux
+          - os: macos-latest
+            dist: dist:mac
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          node node_modules/electron/install.js
+
+      - name: Configure Git identity for tests
+        run: |
+          git config --global user.name "CI"
+          git config --global user.email "ci@example.com"
+
+      - name: Prepare Linux display and Chromium sandbox
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb imagemagick
+          sudo chown root:root node_modules/electron/dist/chrome-sandbox
+          sudo chmod 4755 node_modules/electron/dist/chrome-sandbox
+
+      - name: Git layer and commit graph tests
+        run: npm test
+
+      - name: Interface test
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" = "Linux" ]; then xvfb-run -a -s "-screen 0 1400x900x24" npm run test:smoke; else npm run test:smoke; fi
+
+      - name: Package
+        shell: bash
+        run: |
+          set -o pipefail
+          if ! npm run ${{ matrix.dist }} 2>&1 | tee build.log; then
+            # Expõe o final do log como anotação (os logs completos exigem login)
+            msg=$(tail -n 40 build.log | sed -e 's/%/%25/g' -e 's/\r//g' | sed -e ':a' -e 'N' -e '$!ba' -e 's/\n/%0A/g')
+            echo "::error title=Package failed::${msg}"
+            exit 1
+          fi
+
+      - name: Launch packaged app (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $p = Start-Process -FilePath "dist\win-unpacked\EasySource.exe" -PassThru
+          Start-Sleep -Seconds 15
+          if ($p.HasExited) { Write-Error "packaged app exited with code $($p.ExitCode)"; exit 1 }
+          Add-Type -AssemblyName System.Windows.Forms, System.Drawing
+          $bounds = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+          $bmp = New-Object System.Drawing.Bitmap $bounds.Width, $bounds.Height
+          $g = [System.Drawing.Graphics]::FromImage($bmp)
+          $g.CopyFromScreen($bounds.Location, [System.Drawing.Point]::Empty, $bounds.Size)
+          New-Item -ItemType Directory -Force -Path test-output | Out-Null
+          $bmp.Save("test-output\packaged-windows.png", [System.Drawing.Imaging.ImageFormat]::Png)
+          Stop-Process -Id $p.Id -Force
+          Write-Output "packaged app was still running after 15 s"
+
+      - name: Launch packaged app (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          cd dist/linux-unpacked
+          sudo chown root:root chrome-sandbox
+          sudo chmod 4755 chrome-sandbox
+          Xvfb :99 -screen 0 1400x900x24 &
+          sleep 2
+          export DISPLAY=:99
+          ./easysource > ../launch.log 2>&1 &
+          PID=$!
+          sleep 15
+          if ! kill -0 $PID 2>/dev/null; then
+            msg=$(tail -n 40 ../launch.log | sed -e 's/%/%25/g' -e 's/\r//g' | sed -e ':a' -e 'N' -e '$!ba' -e 's/\n/%0A/g')
+            echo "::error title=Linux launch failed::${msg}"
+            exit 1
+          fi
+          mkdir -p ../../test-output
+          import -window root ../../test-output/packaged-linux.png
+          kill $PID
+          echo "packaged app was still running after 15 s"
+
+      - name: Launch packaged app (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          set +e
+          APP=$(ls -d dist/mac-arm64/EasySource.app 2>/dev/null || ls -d dist/mac/EasySource.app)
+          {
+            echo "app: $APP"
+            codesign -dv --verbose=2 "$APP" 2>&1
+            echo "--- codesign --verify"
+            codesign --verify --deep --strict --verbose=2 "$APP" 2>&1
+          } > dist/diag.txt
+          VERIFY=$(codesign --verify --deep --strict "$APP" >/dev/null 2>&1; echo $?)
+          "$APP/Contents/MacOS/EasySource" > dist/launch.log 2>&1 &
+          PID=$!
+          sleep 15
+          RUNNING=0; kill -0 $PID 2>/dev/null && RUNNING=1
+          if [ "$VERIFY" != "0" ] || [ "$RUNNING" != "1" ]; then
+            msg=$( { cat dist/diag.txt; echo "--- running after 15 s: $RUNNING"; echo "--- launch.log"; tail -n 30 dist/launch.log; } | sed -e 's/%/%25/g' -e 's/\r//g' | sed -e ':a' -e 'N' -e '$!ba' -e 's/\n/%0A/g')
+            echo "::error title=macOS launch failed::${msg}"
+            kill $PID 2>/dev/null
+            exit 1
+          fi
+          mkdir -p test-output
+          screencapture -x test-output/packaged-macos.png || true
+          kill $PID
+          echo "packaged app was still running after 15 s (signature verified)"
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: screenshots-${{ matrix.os }}
+          path: test-output/
+          if-no-files-found: warn
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: EasySource-${{ runner.os }}
+          path: |
+            dist/*.exe
+            dist/*.zip
+            dist/*.dmg
+            dist/*.AppImage
+            dist/*.deb
+            dist/*.tar.gz
+          if-no-files-found: error

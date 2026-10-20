@@ -1,0 +1,404 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later | Copyright © 2026 Roger Philippe Pereira -->
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EasySource — cliente Git visual</title>
+<meta name="description" content="Cliente Git visual, moderno e multiplataforma para Windows, macOS e Linux. Livre e de código aberto.">
+<meta property="og:title" content="EasySource">
+<meta property="og:description" content="Cliente Git visual, moderno e multiplataforma para Windows, macOS e Linux.">
+<meta property="og:image" content="screenshot-light.png">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<style>
+  :root {
+    --bg: #fbfcfd; --bg-2: #f2f5f8; --fg: #14181d; --fg-2: #56606b; --line: #e3e8ee;
+    --accent: #0a5cc2; --accent-2: #36b4f5; --card: #ffffff; --shadow: 0 1px 2px rgb(16 24 40 / .04), 0 12px 32px -12px rgb(16 24 40 / .12);
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0f1114; --bg-2: #15181c; --fg: #e8ebef; --fg-2: #98a2ad; --line: #252a31;
+      --accent: #4ea3ff; --accent-2: #36b4f5; --card: #171a1f; --shadow: 0 1px 2px rgb(0 0 0 / .3), 0 16px 40px -16px rgb(0 0 0 / .6);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0f1114; --bg-2: #15181c; --fg: #e8ebef; --fg-2: #98a2ad; --line: #252a31;
+    --accent: #4ea3ff; --accent-2: #36b4f5; --card: #171a1f; --shadow: 0 1px 2px rgb(0 0 0 / .3), 0 16px 40px -16px rgb(0 0 0 / .6);
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; background: var(--bg); color: var(--fg);
+    font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+
+  /* navegação */
+  nav { position: sticky; top: 0; z-index: 10; backdrop-filter: saturate(1.4) blur(12px); background: color-mix(in srgb, var(--bg) 82%, transparent); border-bottom: 1px solid var(--line); }
+  nav .wrap { display: flex; align-items: center; gap: 24px; height: 60px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 650; text-decoration: none; letter-spacing: -.01em; }
+  .brand img { width: 28px; height: 28px; }
+  .links { display: flex; gap: 22px; margin-left: auto; align-items: center; font-size: 14.5px; }
+  .links a { color: var(--fg-2); text-decoration: none; }
+  .links a:hover { color: var(--fg); }
+  select.lang { font: inherit; font-size: 13.5px; color: var(--fg-2); background: transparent; border: 1px solid var(--line); border-radius: 8px; padding: 4px 6px; }
+
+  /* hero */
+  .hero { text-align: center; padding: 88px 0 40px; }
+  .hero img.logo { width: 76px; height: 76px; margin-bottom: 22px; }
+  h1 { font-size: clamp(36px, 6vw, 58px); line-height: 1.08; letter-spacing: -.03em; margin: 0 0 18px; font-weight: 700; }
+  h1 span { background: linear-gradient(120deg, var(--accent), var(--accent-2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .lead { font-size: clamp(17px, 2.2vw, 20px); color: var(--fg-2); max-width: 620px; margin: 0 auto 32px; }
+  .cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .btn { display: inline-flex; align-items: center; gap: 9px; padding: 12px 20px; border-radius: 11px; font-weight: 600; font-size: 15px; text-decoration: none; border: 1px solid var(--line); background: var(--card); transition: transform .15s, box-shadow .15s, border-color .15s; }
+  .btn:hover { transform: translateY(-1px); box-shadow: var(--shadow); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn svg { width: 18px; height: 18px; flex: none; }
+  .meta { margin-top: 16px; font-size: 13.5px; color: var(--fg-2); }
+
+  /* captura */
+  .shot { margin: 48px auto 0; max-width: 1000px; border-radius: 14px; overflow: hidden; border: 1px solid var(--line); box-shadow: var(--shadow); background: var(--bg-2); }
+  .shot img { display: block; width: 100%; height: auto; }
+
+  /* seções */
+  section.wrap { margin-top: 112px; scroll-margin-top: 72px; }
+  h2 { font-size: clamp(26px, 3.6vw, 36px); letter-spacing: -.02em; margin: 0 0 10px; line-height: 1.2; }
+  .sub { color: var(--fg-2); margin: 0 0 40px; max-width: 600px; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 22px; }
+  .card h3 { margin: 12px 0 6px; font-size: 16.5px; letter-spacing: -.01em; }
+  .card p { margin: 0; color: var(--fg-2); font-size: 14.5px; }
+  .ico { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); }
+  .ico svg { width: 19px; height: 19px; }
+
+  /* downloads */
+  .os { display: flex; flex-direction: column; }
+  .os .head { display: flex; align-items: center; gap: 10px; }
+  .os .head svg { width: 22px; height: 22px; }
+  .os h3 { margin: 0; }
+  .os ul { list-style: none; padding: 0; margin: 18px 0; display: grid; gap: 8px; }
+  .os li a { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; text-decoration: none; font-size: 14.5px; transition: border-color .15s, background .15s; }
+  .os li a:hover { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 6%, transparent); }
+  .os li a small { color: var(--fg-2); font-size: 12.5px; white-space: nowrap; }
+  .os li a.recommended { border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); }
+  .note { margin-top: auto; font-size: 12.5px; color: var(--fg-2); }
+  .note code, .fine code { font: 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background: var(--bg-2); padding: 1px 5px; border-radius: 5px; overflow-wrap: anywhere; }
+  .fine { margin-top: 20px; font-size: 13.5px; color: var(--fg-2); }
+
+  /* licença */
+  .license { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .license .card p + p { margin-top: 10px; }
+  .license a { color: var(--accent); }
+
+  footer { margin-top: 110px; border-top: 1px solid var(--line); padding: 28px 0 40px; color: var(--fg-2); font-size: 13.5px; }
+  footer .wrap { display: flex; gap: 20px; flex-wrap: wrap; justify-content: space-between; }
+  footer a { color: var(--fg-2); }
+
+  @media (max-width: 860px) {
+    .grid { grid-template-columns: 1fr 1fr; }
+    .license { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 600px) {
+    .wrap { padding: 0 16px; }
+    .grid { grid-template-columns: 1fr; }
+    .links a.hide-sm { display: none; }
+    .hero { padding-top: 56px; }
+    section.wrap { margin-top: 80px; }
+  }
+</style>
+</head>
+<body>
+<nav>
+  <div class="wrap">
+    <a class="brand" href="#"><img src="icon.svg" alt="">EasySource</a>
+    <div class="links">
+      <a class="hide-sm" href="#recursos" data-i18n="nav.features">Recursos</a>
+      <a class="hide-sm" href="#download" data-i18n="nav.download">Download</a>
+      <a href="https://github.com/RogerPhilippe/EasySource">GitHub</a>
+      <select class="lang" id="lang" aria-label="Idioma / Language">
+        <option value="en">EN</option><option value="pt">PT-BR</option><option value="es">ES</option>
+      </select>
+    </div>
+  </div>
+</nav>
+
+<header class="hero wrap">
+  <img class="logo" src="icon.svg" alt="">
+  <h1 data-i18n-html="hero.title">Git visual, <span>sem complicação</span>.</h1>
+  <p class="lead" data-i18n="hero.lead">Um cliente Git moderno e multiplataforma para Windows, macOS e Linux. Livre, de código aberto e sem conta para criar.</p>
+  <div class="cta">
+    <a class="btn primary" id="cta-download" href="#download">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+      <span id="cta-label" data-i18n="hero.download">Baixar</span>
+    </a>
+    <a class="btn" href="https://github.com/RogerPhilippe/EasySource">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.68 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.41-2.69 5.39-5.25 5.67.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg>
+      <span data-i18n="hero.source">Código-fonte</span>
+    </a>
+  </div>
+  <p class="meta" id="version-meta" data-i18n="hero.meta">Windows · macOS · Linux — licença AGPLv3</p>
+
+  <div class="shot">
+    <picture>
+      <source srcset="screenshot-dark.png" media="(prefers-color-scheme: dark)">
+      <img src="screenshot-light.png" width="1583" height="948" alt="Janela do EasySource mostrando o histórico de um repositório com branches, um merge e uma tag" data-i18n-alt="hero.shot">
+    </picture>
+  </div>
+</header>
+
+<section id="recursos" class="wrap">
+  <h2 data-i18n="features.title">Tudo do dia a dia, num lugar só</h2>
+  <p class="sub" data-i18n="features.sub">As operações que você faz todo dia, com diálogos claros e o Git de verdade por baixo.</p>
+  <div class="grid">
+    <div class="card">
+      <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="6" cy="5" r="2"/><circle cx="6" cy="19" r="2"/><circle cx="18" cy="9" r="2"/><path d="M6 7v10M18 11c0 4-12 2-12 6"/></svg></div>
+      <h3 data-i18n="f1.t">Grafo de commits</h3>
+      <p data-i18n="f1.d">Histórico com branches, merges e tags lado a lado, detalhes e diff de cada commit.</p>
+    </div>
+    <div class="card">
+      <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h10M4 18h6"/><path d="m16 16 2 2 4-4"/></svg></div>
+      <h3 data-i18n="f2.t">Stage por linha</h3>
+      <p data-i18n="f2.d">Adicione ao stage ou descarte arquivos inteiros, blocos ou só as linhas que você escolher.</p>
+    </div>
+    <div class="card">
+      <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M12 21V15" opacity=".35"/><path d="M4 21h16"/></svg></div>
+      <h3 data-i18n="f3.t">Sincronização</h3>
+      <p data-i18n="f3.d">Fetch, pull com merge ou rebase e push por branch, com progresso ao vivo.</p>
+    </div>
+    <div class="card">
+      <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 4v16M17 4v6"/><path d="M17 10c0 5-10 3-10 8"/><path d="m14 7 3-3 3 3"/></svg></div>
+      <h3 data-i18n="f4.t">Rebase interativo</h3>
+      <p data-i18n="f4.d">Reordene, junte, corrija ou descarte commits arrastando para cima e para baixo.</p>
+    </div>
+    <div class="card">
+      <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 4v5"/></svg></div>
+      <h3 data-i18n="f5.t">Abas de repositórios</h3>
+      <p data-i18n="f5.d">Vários repositórios abertos ao mesmo tempo, favoritos, clone e criação em segundos.</p>
+    </div>
+    <div class="card">
+      <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3 4 6v6c0 4.5 3.4 8.2 8 9 4.6-.8 8-4.5 8-9V6l-8-3Z"/><path d="m9 12 2 2 4-4"/></svg></div>
+      <h3 data-i18n="f6.t">Seguro por padrão</h3>
+      <p data-i18n="f6.d">Interface isolada do sistema e repositórios baixados não executam programas ao serem abertos.</p>
+    </div>
+  </div>
+</section>
+
+<section id="download" class="wrap">
+  <h2 data-i18n="dl.title">Download</h2>
+  <p class="sub" id="dl-sub" data-i18n="dl.sub">Escolha seu sistema. É preciso ter o Git instalado.</p>
+  <div class="grid">
+    <div class="card os" data-os="windows">
+      <div class="head">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 5.5 10.5 4.4v7.1H3V5.5Zm8.5-1.2L21 3v8.5h-9.5V4.3ZM3 12.5h7.5v7.1L3 18.5v-6Zm8.5 0H21V21l-9.5-1.3v-7.2Z"/></svg>
+        <h3>Windows</h3>
+      </div>
+      <ul>
+        <li><a class="recommended" data-asset="Setup-.*-x64\.exe$" href="https://github.com/RogerPhilippe/EasySource/releases/latest"><span data-i18n="dl.installer">Instalador</span><small>x64 · .exe</small></a></li>
+        <li><a data-asset="-win-x64\.zip$" href="https://github.com/RogerPhilippe/EasySource/releases/latest"><span data-i18n="dl.portable">Portátil</span><small>x64 · .zip</small></a></li>
+      </ul>
+      <p class="note" data-i18n="dl.win">Na primeira execução, o SmartScreen avisa: clique em “Mais informações” → “Executar assim mesmo”.</p>
+    </div>
+    <div class="card os" data-os="mac">
+      <div class="head">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.4 12.6c0-2.3 1.9-3.4 2-3.5-1.1-1.6-2.8-1.8-3.4-1.8-1.4-.1-2.8.9-3.5.9s-1.8-.8-3-.8C7 7.4 5.5 8.3 4.7 9.8c-1.7 2.9-.4 7.3 1.2 9.7.8 1.2 1.8 2.5 3 2.4 1.2 0 1.7-.8 3.1-.8s1.9.8 3.1.8c1.3 0 2.1-1.2 2.9-2.4.9-1.3 1.3-2.6 1.3-2.7 0 0-2.5-1-2.9-4.2ZM14.1 5.6c.6-.8 1.1-1.9 1-3-.9 0-2.1.6-2.7 1.4-.6.7-1.1 1.8-1 2.9 1 .1 2.1-.5 2.7-1.3Z"/></svg>
+        <h3>macOS</h3>
+      </div>
+      <ul>
+        <li><a class="recommended" data-asset="-mac-arm64\.dmg$" href="https://github.com/RogerPhilippe/EasySource/releases/latest"><span>Apple Silicon</span><small>arm64 · .dmg</small></a></li>
+        <li><a data-asset="-mac-x64\.dmg$" href="https://github.com/RogerPhilippe/EasySource/releases/latest"><span>Intel</span><small>x64 · .dmg</small></a></li>
+      </ul>
+      <p class="note" data-i18n-html="dl.mac">Na primeira abertura, clique com o botão direito no app → “Abrir”, ou rode <code>xattr -dr com.apple.quarantine /Applications/EasySource.app</code>.</p>
+    </div>
+    <div class="card os" data-os="linux">
+      <div class="head">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c-2.2 0-3.6 1.9-3.6 4.6 0 1.4.3 2.3-.5 3.7-.9 1.5-2.6 3.6-2.6 6.1 0 .6.1 1.2.4 1.7-.8.4-1.6 1-1.6 1.8 0 1.2 1.7 1.4 3.3 1.9 1 .3 1.9.2 2.6-.4.6.1 1.3.2 2 .2s1.4-.1 2-.2c.7.6 1.6.7 2.6.4 1.6-.5 3.3-.7 3.3-1.9 0-.8-.8-1.4-1.6-1.8.3-.5.4-1.1.4-1.7 0-2.5-1.7-4.6-2.6-6.1-.8-1.4-.5-2.3-.5-3.7C15.6 3.9 14.2 2 12 2Zm-1.6 4.2c.4 0 .7.5.7 1.1s-.3 1.1-.7 1.1-.7-.5-.7-1.1.3-1.1.7-1.1Zm3.2 0c.4 0 .7.5.7 1.1s-.3 1.1-.7 1.1-.7-.5-.7-1.1.3-1.1.7-1.1ZM12 9.1c.9 0 2 .6 2 1.1s-1.1 1-2 1-2-.5-2-1 1.1-1.1 2-1.1Z"/></svg>
+        <h3>Linux</h3>
+      </div>
+      <ul>
+        <li><a class="recommended" data-asset="\.AppImage$" href="https://github.com/RogerPhilippe/EasySource/releases/latest"><span>AppImage</span><small>x64 · .AppImage</small></a></li>
+        <li><a data-asset="\.deb$" href="https://github.com/RogerPhilippe/EasySource/releases/latest"><span>Debian / Ubuntu</span><small>x64 · .deb</small></a></li>
+        <li><a data-asset="-linux-x64\.tar\.gz$" href="https://github.com/RogerPhilippe/EasySource/releases/latest"><span data-i18n="dl.tarball">Arquivo compactado</span><small>x64 · .tar.gz</small></a></li>
+      </ul>
+      <p class="note" data-i18n-html="dl.linux">No AppImage, rode <code>chmod +x EasySource-*.AppImage</code> antes de abrir.</p>
+    </div>
+  </div>
+  <p class="fine" data-i18n-html="dl.fine">As builds não são assinadas digitalmente. Confira a integridade com o <code>SHA256SUMS.txt</code> de cada versão, ou gere o seu próprio build a partir do código. <a href="https://github.com/RogerPhilippe/EasySource/releases">Todas as versões →</a></p>
+</section>
+
+<section id="licenca" class="wrap">
+  <h2 data-i18n="lic.title">Livre e aberto</h2>
+  <p class="sub" data-i18n="lic.sub">Use, estude, modifique e distribua. O código está todo no GitHub.</p>
+  <div class="license">
+    <div class="card">
+      <h3>AGPLv3</h3>
+      <p data-i18n="lic.agpl">Uso gratuito para qualquer finalidade, inclusive comercial. Se você distribuir uma versão modificada, ou oferecê-la pela rede, o código-fonte dela também precisa ser aberto sob a mesma licença.</p>
+      <p><a href="https://github.com/RogerPhilippe/EasySource/blob/main/LICENSE" data-i18n="lic.read">Ler a licença →</a></p>
+    </div>
+    <div class="card">
+      <h3 data-i18n="lic.comm.t">Licença comercial</h3>
+      <p data-i18n="lic.comm">Quer incorporar o EasySource num produto fechado, sem publicar o código? Há uma licença comercial disponível.</p>
+      <p><a href="https://github.com/RogerPhilippe/EasySource/blob/main/COMMERCIAL-LICENSE.pt-BR.md" id="comm-link" data-i18n="lic.comm.link">Saiba mais →</a></p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>© 2026 Roger Philippe Pereira</span>
+    <span><a href="https://github.com/RogerPhilippe/EasySource">GitHub</a> · <a href="https://github.com/RogerPhilippe/EasySource/issues" data-i18n="foot.issues">Reportar problema</a> · <a id="contrib-link" href="https://github.com/RogerPhilippe/EasySource/blob/main/CONTRIBUTING.pt-BR.md" data-i18n="foot.contrib">Contribuir</a></span>
+  </div>
+</footer>
+
+<script>
+(() => {
+  const REPO = 'RogerPhilippe/EasySource';
+  const T = {
+    en: {
+      'nav.features': 'Features', 'nav.download': 'Download',
+      'hero.title': 'Visual Git, <span>without the fuss</span>.',
+      'hero.lead': 'A modern, multiplatform Git client for Windows, macOS and Linux. Free, open source, no account required.',
+      'hero.download': 'Download', 'hero.source': 'Source code', 'hero.meta': 'Windows · macOS · Linux — AGPLv3 license',
+      'hero.shot': 'EasySource window showing the history of a repository with branches, a merge and a tag',
+      'features.title': 'Everything you do every day, in one place',
+      'features.sub': 'The operations you run daily, with clear dialogs and real Git underneath.',
+      'f1.t': 'Commit graph', 'f1.d': 'History with branches, merges and tags side by side, with details and diff for every commit.',
+      'f2.t': 'Line-level staging', 'f2.d': 'Stage or discard whole files, hunks or just the lines you pick.',
+      'f3.t': 'Sync', 'f3.d': 'Fetch, pull with merge or rebase, and push per branch, with live progress.',
+      'f4.t': 'Interactive rebase', 'f4.d': 'Reorder, squash, fix up or drop commits by moving them up and down.',
+      'f5.t': 'Repository tabs', 'f5.d': 'Several repositories open at once, bookmarks, clone and create in seconds.',
+      'f6.t': 'Secure by default', 'f6.d': 'The interface is isolated from the system, and downloaded repositories cannot run programs when opened.',
+      'dl.title': 'Download', 'dl.sub': 'Pick your system. Git must be installed.',
+      'dl.installer': 'Installer', 'dl.portable': 'Portable', 'dl.tarball': 'Tarball',
+      'dl.win': 'On first launch, SmartScreen shows a warning: click “More info” → “Run anyway”.',
+      'dl.mac': 'On first launch, right-click the app → “Open”, or run <code>xattr -dr com.apple.quarantine /Applications/EasySource.app</code>.',
+      'dl.linux': 'For the AppImage, run <code>chmod +x EasySource-*.AppImage</code> first.',
+      'dl.fine': 'Builds are not code-signed. Check integrity with each version’s <code>SHA256SUMS.txt</code>, or build it yourself from source. <a href="https://github.com/RogerPhilippe/EasySource/releases">All versions →</a>',
+      'lic.title': 'Free and open', 'lic.sub': 'Use, study, modify and share it. All the code is on GitHub.',
+      'lic.agpl': 'Free to use for any purpose, including commercial. If you distribute a modified version, or offer it over a network, its source code must also be released under the same license.',
+      'lic.read': 'Read the license →', 'lic.comm.t': 'Commercial license',
+      'lic.comm': 'Want to embed EasySource in a closed product without publishing the code? A commercial license is available.',
+      'lic.comm.link': 'Learn more →', 'foot.issues': 'Report an issue', 'foot.contrib': 'Contribute',
+      'cta.for': 'Download for', 'latest': 'Latest version',
+    },
+    es: {
+      'nav.features': 'Funciones', 'nav.download': 'Descargar',
+      'hero.title': 'Git visual, <span>sin complicaciones</span>.',
+      'hero.lead': 'Un cliente Git moderno y multiplataforma para Windows, macOS y Linux. Libre, de código abierto y sin cuentas.',
+      'hero.download': 'Descargar', 'hero.source': 'Código fuente', 'hero.meta': 'Windows · macOS · Linux — licencia AGPLv3',
+      'hero.shot': 'Ventana de EasySource con el historial de un repositorio con ramas, un merge y una etiqueta',
+      'features.title': 'Todo lo del día a día, en un solo lugar',
+      'features.sub': 'Las operaciones que haces cada día, con diálogos claros y Git de verdad por debajo.',
+      'f1.t': 'Grafo de commits', 'f1.d': 'Historial con ramas, merges y etiquetas lado a lado, con detalles y diff de cada commit.',
+      'f2.t': 'Stage por línea', 'f2.d': 'Agrega al stage o descarta archivos completos, bloques o solo las líneas que elijas.',
+      'f3.t': 'Sincronización', 'f3.d': 'Fetch, pull con merge o rebase y push por rama, con progreso en vivo.',
+      'f4.t': 'Rebase interactivo', 'f4.d': 'Reordena, combina, corrige o descarta commits moviéndolos arriba y abajo.',
+      'f5.t': 'Pestañas de repositorios', 'f5.d': 'Varios repositorios abiertos a la vez, favoritos, clonar y crear en segundos.',
+      'f6.t': 'Seguro por defecto', 'f6.d': 'La interfaz está aislada del sistema y los repositorios descargados no ejecutan programas al abrirlos.',
+      'dl.title': 'Descargar', 'dl.sub': 'Elige tu sistema. Necesitas tener Git instalado.',
+      'dl.installer': 'Instalador', 'dl.portable': 'Portátil', 'dl.tarball': 'Archivo comprimido',
+      'dl.win': 'En la primera ejecución, SmartScreen muestra un aviso: haz clic en “Más información” → “Ejecutar de todas formas”.',
+      'dl.mac': 'En la primera apertura, haz clic derecho en la app → “Abrir”, o ejecuta <code>xattr -dr com.apple.quarantine /Applications/EasySource.app</code>.',
+      'dl.linux': 'Con el AppImage, ejecuta <code>chmod +x EasySource-*.AppImage</code> antes de abrirlo.',
+      'dl.fine': 'Las builds no están firmadas digitalmente. Verifica la integridad con el <code>SHA256SUMS.txt</code> de cada versión, o compílalo tú mismo desde el código. <a href="https://github.com/RogerPhilippe/EasySource/releases">Todas las versiones →</a>',
+      'lic.title': 'Libre y abierto', 'lic.sub': 'Úsalo, estúdialo, modifícalo y compártelo. Todo el código está en GitHub.',
+      'lic.agpl': 'Uso gratuito para cualquier fin, incluso comercial. Si distribuyes una versión modificada, o la ofreces por la red, su código fuente también debe publicarse bajo la misma licencia.',
+      'lic.read': 'Leer la licencia →', 'lic.comm.t': 'Licencia comercial',
+      'lic.comm': '¿Quieres integrar EasySource en un producto cerrado sin publicar el código? Hay una licencia comercial disponible.',
+      'lic.comm.link': 'Más información →', 'foot.issues': 'Reportar un problema', 'foot.contrib': 'Contribuir',
+      'cta.for': 'Descargar para', 'latest': 'Última versión',
+    },
+  };
+  const PT = { 'cta.for': 'Baixar para', 'latest': 'Versão mais recente' };
+  const CONTRIB = { pt: 'CONTRIBUTING.pt-BR.md', en: 'CONTRIBUTING.md', es: 'CONTRIBUTING.es.md' };
+  const COMM = { pt: 'COMMERCIAL-LICENSE.pt-BR.md', en: 'COMMERCIAL-LICENSE.md', es: 'COMMERCIAL-LICENSE.es.md' };
+
+  // Guarda os textos originais (português) para poder voltar a eles.
+  const orig = new Map();
+  document.querySelectorAll('[data-i18n],[data-i18n-html],[data-i18n-alt]').forEach((el) => {
+    orig.set(el, { text: el.textContent, html: el.innerHTML, alt: el.getAttribute('alt') });
+  });
+
+  let lang = 'pt';
+  let osName = null;
+  let release = null;
+  const t = (k) => (T[lang] && T[lang][k]) || PT[k] || '';
+
+  function applyLang(l) {
+    lang = l;
+    document.documentElement.lang = { pt: 'pt-BR', en: 'en', es: 'es' }[l];
+    document.querySelectorAll('[data-i18n],[data-i18n-html],[data-i18n-alt]').forEach((el) => {
+      const o = orig.get(el);
+      const k = el.dataset.i18n || el.dataset.i18nHtml || el.dataset.i18nAlt;
+      const v = l === 'pt' ? null : T[l][k];
+      if (el.dataset.i18nAlt) el.setAttribute('alt', v || o.alt);
+      else if (el.dataset.i18nHtml) el.innerHTML = v || o.html;
+      else el.textContent = v || o.text;
+    });
+    document.getElementById('comm-link').href = `https://github.com/${REPO}/blob/main/${COMM[l]}`;
+    document.getElementById('contrib-link').href = `https://github.com/${REPO}/blob/main/${CONTRIB[l]}`;
+    updateCta();
+    try { localStorage.setItem('lang', l); } catch { /* opcional */ }
+  }
+
+  function detectOs() {
+    const ua = navigator.userAgent;
+    if (/Windows/i.test(ua)) return 'windows';
+    if (/Mac OS X|Macintosh/i.test(ua) && !/iPhone|iPad/i.test(ua)) return 'mac';
+    if (/Linux|X11/i.test(ua) && !/Android/i.test(ua)) return 'linux';
+    return null;
+  }
+
+  function updateCta() {
+    const label = document.getElementById('cta-label');
+    const names = { windows: 'Windows', mac: 'macOS', linux: 'Linux' };
+    if (osName) label.textContent = `${t('cta.for')} ${names[osName]}`;
+    const meta = document.getElementById('version-meta');
+    if (release) meta.textContent = `${t('latest')}: ${release.tag_name} · ${orig.get(meta) && (lang === 'pt' ? orig.get(meta).text : T[lang]['hero.meta'])}`;
+  }
+
+  // Botão principal: leva ao download recomendado do sistema detectado.
+  function linkCta() {
+    if (!osName) return;
+    const rec = document.querySelector(`.os[data-os="${osName}"] a.recommended`);
+    if (rec) document.getElementById('cta-download').href = rec.href;
+  }
+
+  // Com o repositório público, troca os links pela página da versão por arquivos diretos.
+  async function loadRelease() {
+    try {
+      const r = await fetch(`https://api.github.com/repos/${REPO}/releases/latest`, { headers: { Accept: 'application/vnd.github+json' } });
+      if (!r.ok) return;
+      release = await r.json();
+      document.querySelectorAll('a[data-asset]').forEach((a) => {
+        const re = new RegExp(a.dataset.asset);
+        const asset = (release.assets || []).find((x) => re.test(x.name));
+        if (asset) {
+          a.href = asset.browser_download_url;
+          a.title = `${asset.name} · ${(asset.size / 1048576).toFixed(0)} MB`;
+        }
+      });
+      linkCta();
+      updateCta();
+    } catch { /* sem rede ou repositório privado: ficam os links para a página da versão */ }
+  }
+
+  osName = detectOs();
+  let saved = null;
+  try { saved = localStorage.getItem('lang'); } catch { /* opcional */ }
+  const nav = (navigator.language || 'pt').slice(0, 2);
+  const initial = saved || (['en', 'es'].includes(nav) ? nav : 'pt');
+  const sel = document.getElementById('lang');
+  sel.value = initial;
+  sel.addEventListener('change', () => applyLang(sel.value));
+  applyLang(initial);
+  linkCta();
+  loadRelease();
+})();
+</script>
+</body>
+</html>
