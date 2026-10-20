@@ -1,7 +1,7 @@
 {
   "name": "easysource",
   "productName": "EasySource",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Cliente Git visual e moderno para Windows, macOS e Linux",
   "main": "src/main/main.js",
   "license": "AGPL-3.0-or-later",
